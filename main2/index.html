@@ -6,17 +6,23 @@
     <title>Chat</title>
     <style>
         body{font-family:sans-serif;margin:0;padding:0;display:flex;justify-content:center;align-items:center;height:100vh;background-color:#36393f;}
-        .chat-container{width:350px;height:600px;background-color:#2f3136;border-radius:10px;overflow:hidden;}
+        .chat-container{width:350px;height:600px;background-color:#2f3136;border-radius:10px;overflow:hidden;display:none;}
         .header{background-color:#202225;padding:15px;color:white;text-align:center;}
         .messages{background-color:#2f3136;height:450px;padding:10px;overflow-y:auto;color:white;}
-        .message{margin:5px 0;padding:8px;background-color:#4f545c;border-radius:8px;}
+        .message{margin:5px 0;padding:8px;background-color:#4f545c;border-radius:8px;display:flex;align-items:center;}
+        .message img{width:30px;height:30px;border-radius:50%;margin-right:10px;}
         .input-container{display:flex;padding:10px;background-color:#202225;}
         .input-container input{flex:1;padding:10px;border:none;border-radius:5px;margin-right:5px;}
         .input-container button{padding:10px;background-color:#7289da;border:none;border-radius:5px;color:white;}
+        .login-container{display:flex;justify-content:center;align-items:center;height:100vh;}
+        .login-container a{color:white;text-decoration:none;padding:10px;background-color:#7289da;border-radius:5px;}
     </style>
 </head>
 <body>
-    <div class="chat-container">
+    <div id="login" class="login-container">
+        <a href="https://discord.com/oauth2/authorize?client_id=1338842632452964443&response_type=code&redirect_uri=https%3A%2F%2Fmegamexlevi2.github.io%2FPanelTube%2Fmain2%2F&scope=identify+email">Login com Discord</a>
+    </div>
+    <div id="chat" class="chat-container">
         <div class="header">Chat</div>
         <div class="messages" id="messages"></div>
         <div class="input-container">
@@ -25,12 +31,55 @@
         </div>
     </div>
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if(code){
+            fetchUserInfo(code);
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('chat').style.display = 'block';
+        }else{
+            document.getElementById('login').style.display = 'flex';
+            document.getElementById('chat').style.display = 'none';
+        }
+
+        async function fetchUserInfo(code){
+            const response = await fetch(`https://discord.com/api/oauth2/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `client_id=1338842632452964443&client_secret=YOUR_CLIENT_SECRET&code=${code}&grant_type=authorization_code&redirect_uri=https://megamexlevi2.github.io/PanelTube/main2/&scope=identify+email`
+            });
+            const data = await response.json();
+            const accessToken = data.access_token;
+            const userInfo = await fetch('https://discord.com/api/v10/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            const user = await userInfo.json();
+            const userName = user.username;
+            const userAvatar = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+            localStorage.setItem('userName', userName);
+            localStorage.setItem('userAvatar', userAvatar);
+        }
+
         function sendMessage(){
             var message = document.getElementById("message-input").value;
             if(message.trim() !== ""){
+                const userName = localStorage.getItem('userName');
+                const userAvatar = localStorage.getItem('userAvatar');
                 var messageDiv = document.createElement("div");
                 messageDiv.classList.add("message");
-                messageDiv.textContent = message;
+                var userImg = document.createElement("img");
+                userImg.src = userAvatar;
+                var userNameDiv = document.createElement("div");
+                userNameDiv.textContent = userName;
+                var messageTextDiv = document.createElement("div");
+                messageTextDiv.textContent = ": " + message;
+                messageDiv.appendChild(userImg);
+                messageDiv.appendChild(userNameDiv);
+                messageDiv.appendChild(messageTextDiv);
                 document.getElementById("messages").appendChild(messageDiv);
                 document.getElementById("message-input").value = "";
                 document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
