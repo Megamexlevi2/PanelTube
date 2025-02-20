@@ -5,14 +5,116 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PanelTube</title>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #36393f; }
-        .panel-container { width: 100vw; height: 100vh; background-color: #2f3136; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .header { background-color: #202225; padding: 15px; color: white; text-align: center; width: 100%; }
-        .file-upload-container { background-color: #2f3136; width: 90%; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .file-upload-container input { margin-bottom: 10px; padding: 10px; border-radius: 5px; width: 100%; max-width: 300px; }
-        .file-upload-container button { padding: 10px; background-color: #7289da; border: none; border-radius: 5px; color: white; width: 100%; max-width: 300px; }
-        .file-list { background-color: #2f3136; width: 90%; padding: 20px; overflow-y: auto; color: white; height: 300px; margin-top: 20px; border-radius: 10px; }
-        .file-item { background-color: #4f545c; margin: 5px 0; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1c1f23;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .panel-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #2c2f36;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            background-color: #3e444f;
+            width: 100%;
+            text-align: center;
+            color: white;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .file-upload-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .file-upload-container input {
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 350px;
+            border: 2px solid #4a5568;
+            background-color: #2b3038;
+            color: white;
+        }
+        .file-upload-container button {
+            padding: 12px;
+            background-color: #5c6bc0;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            max-width: 350px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .file-upload-container button:hover {
+            background-color: #3f51b5;
+        }
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            margin-top: 30px;
+            color: white;
+        }
+        .file-item {
+            background-color: #3c4148;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .file-item:hover {
+            transform: translateY(-5px);
+        }
+        .file-thumbnail {
+            width: 100%;
+            height: 120px;
+            background-color: #2b3038;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+        .file-name {
+            font-size: 14px;
+            color: #dfe2e7;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .file-link {
+            color: #4a90e2;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .file-link:hover {
+            color: #1c73e8;
+        }
     </style>
 </head>
 <body>
@@ -22,8 +124,9 @@
             <input type="file" id="file-input" />
             <button id="upload-btn">Upload Arquivo</button>
         </div>
+        <!-- Lista de arquivos -->
         <div class="file-list" id="file-list">
-            <!-- Lista de arquivos enviados aparecerá aqui -->
+            <!-- Arquivos serão carregados aqui -->
         </div>
     </div>
 
@@ -31,36 +134,40 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-storage.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3zuZEky2ZciRkm8GBgX2fUijrSQGYOXU",
-            authDomain: "znyxus-366f6.firebaseapp.com",
-            databaseURL: "https://znyxus-366f6-default-rtdb.firebaseio.com",
-            projectId: "znyxus-366f6",
-            storageBucket: "znyxus-366f6.appspot.com",
-            messagingSenderId: "748177620601",
-            appId: "1:748177620601:web:f71a77ac90ee09f8619ea8",
-            measurementId: "G-F6JCYY519W"
+
+        // Configurações do Firebase
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA3zuZEky2ZciRkm8GBgX2fUijrSQGYOXU", 
+            authDomain: "znyxus-366f6.firebaseapp.com", 
+            databaseURL: "https://znyxus-366f6-default-rtdb.firebaseio.com", 
+            projectId: "znyxus-366f6", 
+            storageBucket: "znyxus-366f6.appspot.com", 
+            messagingSenderId: "748177620601", 
+            appId: "1:748177620601:web:f71a77ac90ee09f8619ea8", 
+            measurementId: "G-F6JCYY519W" 
         };
 
         const app = initializeApp(firebaseConfig);
         const storage = getStorage(app);
         const db = getFirestore(app);
 
+        // Botão de Upload
         document.getElementById('upload-btn').addEventListener('click', uploadFile);
 
+        // Função de upload
         async function uploadFile() {
             const file = document.getElementById('file-input').files[0];
             if (file) {
                 const storageRef = ref(storage, 'uploads/' + file.name);
                 try {
+                    // Enviar o arquivo para o Firebase Storage
                     await uploadBytes(storageRef, file);
                     const fileUrl = await getDownloadURL(storageRef);
-                    await addDoc(collection(db, "files"), {
-                        fileName: file.name,
-                        fileUrl: fileUrl,
-                        timestamp: new Date()
-                    });
+
+                    // Adicionar o link do arquivo no Firestore
+                    await addDoc(collection(db, "files"), { fileName: file.name, fileUrl: fileUrl, timestamp: new Date() });
+
+                    // Atualizar a lista de arquivos
                     loadFileList();
                     alert('Arquivo enviado com sucesso!');
                 } catch (error) {
@@ -72,9 +179,10 @@
             }
         }
 
+        // Função para carregar os arquivos na lista
         async function loadFileList() {
             const fileListDiv = document.getElementById('file-list');
-            fileListDiv.innerHTML = '';
+            fileListDiv.innerHTML = '';  // Limpar a lista antes de adicionar os novos arquivos
             const filesQuery = query(collection(db, "files"), orderBy("timestamp"));
             try {
                 const querySnapshot = await getDocs(filesQuery);
@@ -82,10 +190,18 @@
                     const fileData = doc.data();
                     const fileItem = document.createElement('div');
                     fileItem.classList.add('file-item');
+
+                    const fileThumbnail = document.createElement('div');
+                    fileThumbnail.classList.add('file-thumbnail');
+                    fileThumbnail.textContent = '📁';
+
                     const fileLink = document.createElement('a');
                     fileLink.href = fileData.fileUrl;
                     fileLink.textContent = fileData.fileName;
                     fileLink.target = '_blank';
+                    fileLink.classList.add('file-name', 'file-link');
+
+                    fileItem.appendChild(fileThumbnail);
                     fileItem.appendChild(fileLink);
                     fileListDiv.appendChild(fileItem);
                 });
@@ -94,6 +210,7 @@
             }
         }
 
+        // Carregar arquivos ao inicializar
         loadFileList();
     </script>
 </body>
